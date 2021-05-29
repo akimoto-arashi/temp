@@ -1,0 +1,255 @@
+
+<hr>
+<style>
+	#container {
+    width:700px;
+    float:left;
+    background-color:pink;
+   margin-top: 5px;
+	}
+	#cnvsFrame {
+		height: 0;
+		padding-bottom:75%;
+	}
+
+	.fl {
+		float:left;
+		margin:20px;
+	}
+	.flc {
+		float:right;
+		margin:5px;
+		width:300px;
+		height:250px;
+	}
+	body {
+		overflow: auto;
+	}
+</style>
+<div id="container">
+<div id="cnvsFrame">
+    <canvas id="cnvs"> </canvas>
+</div>
+</div>
+
+    <img src="http://i.imgur.com/3rtZWzQ.jpg" class="flc" onclick="javascript:tst(1);" />
+    <img src="http://i.imgur.com/n0tXkQJ.jpg" class="flc" onclick="javascript:tst(2);" />
+    <img src="http://i.imgur.com/8DsTRlk.jpg" class="flc" onclick="javascript:tst(3);" />
+    <img src="http://i.imgur.com/dJcnNSm.jpg" class="flc" onclick="javascript:tst(4);" />
+<div style="clear:both"></div>
+<hr>
+      
+<script src="src/js/r69/three.min.js"></script>
+<script src="src/js/OrbitControls.js"></script>
+<script src="src/js/KeyboardState.js"></script>
+
+<script>
+////////////////////////////////////////////////////
+var camera, scene, renderer, geometry, material, light, controls;
+var plant1,plant2,plant3,plant4;
+var tex1, tex2;
+var wall;
+var mesh = plant1;
+
+var raycaster;
+var mouse = new THREE.Vector2();
+
+init();
+animate();
+
+function init() {
+    var theCanvas = document.getElementById("cnvs");
+    var theCanvasFrame = document.getElementById("cnvsFrame");
+
+    renderer = new THREE.WebGLRenderer({
+        canvas: theCanvas,
+        antialias: true
+    });
+    var ww = theCanvasFrame.clientWidth;
+    var hh = theCanvasFrame.clientHeight;
+    renderer.setSize(ww, hh);
+    renderer.setClearColor(0x222222);
+
+    scene = new THREE.Scene();
+
+    camera = new THREE.PerspectiveCamera(50, ww/hh, 1, 10000);
+    camera.position.set(0,100,200);
+    scene.add(camera);
+	
+	createBackground();
+	////////////////////////////////////////////
+	var plantMat = new THREE.MeshLambertMaterial ({color: 0x8c8c8c});
+	//var plantGeo = new THREE.PlaneGeometry(100, 100);
+	var plantGeo = new THREE.BoxGeometry(500, 320, 0);
+	plant1 = new THREE.Mesh (plantGeo, plantMat);
+	
+	mesh = plant1;
+	
+	plant2 = plant1.clone();
+	plant3 = plant1.clone();
+	plant4 = plant1.clone();
+	
+	plant1.name = "p1";
+	plant2.name = "p2";
+	plant3.name = "p3";
+	plant4.name = "p4";
+	
+	plant1.position.set( 0, 30, -299);
+	
+	plant2.position.set(0, 30, 299);
+	plant2.rotation.y = Math.PI;
+	
+	plant3.position.set(299, 30, 0);
+	plant3.rotation.y = -Math.PI/2;
+	
+	plant4.position.set(-299, 30, 0);
+	plant4.rotation.y = Math.PI/2;
+	
+	scene.add(plant1);
+	scene.add(plant2);
+	scene.add(plant3);
+	scene.add(plant4);
+	///////////////////////////////////////////
+    THREE.ImageUtils.crossOrigin = '';
+    tex1 = THREE.ImageUtils.loadTexture('http://i.imgur.com/3rtZWzQ.jpg');
+    tex2 = THREE.ImageUtils.loadTexture('http://i.imgur.com/n0tXkQJ.jpg');
+    tex3 = THREE.ImageUtils.loadTexture('http://i.imgur.com/8DsTRlk.jpg');
+    tex4 = THREE.ImageUtils.loadTexture('http://i.imgur.com/dJcnNSm.jpg');
+
+    light = new THREE.AmbientLight(0xffffff);
+    light.position.set(0, 0, 0);
+    scene.add(light);
+
+    controls = new THREE.OrbitControls(camera, renderer.domElement);
+	
+	raycaster = new THREE.Raycaster();
+	document.addEventListener( 'mousedown', onDocumentMouseDown, false );
+
+}
+///////////////////////////////bump map///////////////////////////////////
+function createMesh(geom, imageFile, normal) {
+
+	if (normal) {
+
+	var t = THREE.ImageUtils.loadTexture(imageFile);
+		var m = THREE.ImageUtils.loadTexture(normal);
+		var mat2 = new THREE.MeshPhongMaterial({
+			map: t,
+			normalMap: m
+		});
+		
+		var mesh = new THREE.Mesh(geom, mat2);
+		return mesh;
+	} else {
+		var t = THREE.ImageUtils.loadTexture(imageFile);
+		var mat1 = new THREE.MeshPhongMaterial({
+			map: t
+		})
+		var mesh = new THREE.Mesh(geom, mat1);
+		return mesh;
+	}
+	return mesh;
+}
+////////////////////////////////////////////////////////////////////////////////
+function setDefault(which){
+	if(which == "p1")mesh = plant1;
+	else if(which == "p2")mesh = plant2;
+	else if(which == "p3")mesh = plant3;
+	else if(which == "p4")mesh = plant4;
+}
+
+function onDocumentMouseDown( event ) {
+	event.preventDefault();
+	mouse.x = ( event.clientX / window.innerWidth ) * 2 - 1;
+	mouse.y = - ( event.clientY / window.innerHeight ) * 2 + 1;
+
+	// find intersections
+	var vector = new THREE.Vector3( mouse.x, mouse.y, 1 ).unproject( camera );
+	raycaster.set( camera.position, vector.sub( camera.position ).normalize() );
+	var intersects = raycaster.intersectObjects( scene.children );
+	if ( intersects.length > 0 ) {
+		if (intersects[0].object.name == "p1")
+			setDefault("p1");
+		else if (intersects[0].object.name == "p2")
+			setDefault("p2");
+		else if (intersects[0].object.name == "p3")
+			setDefault("p3");
+		else if (intersects[0].object.name == "p4")
+			setDefault("p4");
+	}
+}
+////////////////////////////////////////////////////////////////////////////////
+function tst(which) {
+
+    if (which === 1) {
+        //alert("click");
+        mesh.material = new THREE.MeshBasicMaterial({
+            map: tex1
+        });
+    } else if (which === 2) {
+        mesh.material = new THREE.MeshBasicMaterial({
+            map: tex2
+        });
+    } else if (which === 3) {
+        mesh.material = new THREE.MeshBasicMaterial({
+            map: tex3
+        });
+    } else if (which === 4) {
+        mesh.material = new THREE.MeshBasicMaterial({
+            map: tex4
+        });
+    }
+    // debugger;
+}
+
+function createBackground(){
+	/////////////////////set wall///////////////////
+	wall = new THREE.Object3D();
+	var wallmesh = createMesh(new THREE.BoxGeometry(600, 600, 0), "src/textures/wallBrick_texture.jpg", "src/textures/wallBrick_texture-bm.jpg");
+	wall.add (wallmesh);
+	wall.castShadow = true;
+	
+	var wallF = wall.clone();
+	var wallR = wallF.clone();
+	var wallL = wallF.clone();
+	var wallB = wallF.clone();
+	
+	wallR.rotation.y = Math.PI/2;
+	wallL.rotation.y = Math.PI/2;
+	
+	wallF.position.set (0, 0, 300);
+	wallR.position.set (300, 0, 0);
+	wallL.position.set (-300, 0, 0);
+	wallB.position.set (0, 0, -300);
+		
+	var wallx = new THREE.Object3D();
+	wallx.add (wallF);
+	wallx.add (wallR);
+	wallx.add (wallL);
+	wallx.add (wallB);
+	scene.add (wallx);
+	/////////////////////////////////////////////////////////////////////////
+	/////////////////////floor///////////////////////////////
+	floor = new THREE.Object3D();
+	var floormesh = createMesh(new THREE.BoxGeometry(600,0,600), "src/textures/wallBrick_texture.jpg", "src/textures/wallBrick_texture-bm.jpg");
+	floor.add (floormesh);
+	floor.castShadow = true;
+	floor.position.set (0, -150, 0);
+	scene.add (floor);
+	/////////////////////////////////////////////////////////////////////////
+}
+
+function animate() {
+    controls.update();
+
+    requestAnimationFrame(animate);
+    render();
+}
+
+function render() {
+    renderer.render(scene, camera);
+}
+</script>
+</body>
+
+</html>
